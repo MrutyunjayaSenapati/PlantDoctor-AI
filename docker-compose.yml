@@ -1,0 +1,34 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: plantdoc
+      POSTGRES_PASSWORD: plantdoc
+      POSTGRES_DB: plantdoc
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  backend:
+    build:
+      context: ./backend
+    ports:
+      - "3001:3001"
+    environment:
+      PORT: 3001
+      DATABASE_URL: postgres://plantdoc:plantdoc@postgres:5432/plantdoc
+      AI_SERVICE_URL: http://ai-service:8000
+    depends_on:
+      - postgres
+
+  ai-service:
+    build:
+      context: ./ai-service
+    ports:
+      - "8000:8000"
+    environment:
+      DEVICE: cpu
+
+volumes:
+  postgres_data:

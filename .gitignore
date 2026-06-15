@@ -1,0 +1,15 @@
+node_modules/
+.expo/
+dist/
+.env
+.env.local
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+*.egg-info/
+.DS_Store
+*.log
+PRD.md
+docs/
