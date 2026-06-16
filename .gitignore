@@ -13,3 +13,5 @@ venv/
 *.log
 PRD.md
 docs/
+graphify-out/
+mobile/android/

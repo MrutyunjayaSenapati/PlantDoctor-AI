@@ -1,6 +1,7 @@
 import express, { type Express } from "express";
 import cors from "cors";
 import dotenv from "dotenv";
+import authRouter from "./routes/auth";
 
 dotenv.config();
 
@@ -13,6 +14,8 @@ app.use(express.json());
 app.get("/health", (_req, res) => {
   res.json({ status: "ok" });
 });
+
+app.use("/api/v1/auth", authRouter);
 
 app.listen(port, () => {
   console.log(`Backend server running on port ${port}`);
