@@ -1,4 +1,5 @@
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, Alert } from "react-native";
+import { GoogleSignin } from "@react-native-google-signin/google-signin";
 import { useAuthStore } from "../store/authStore";
 import { removeToken } from "../services/auth";
 
@@ -6,8 +7,14 @@ export default function HomeScreen() {
   const { user, logout } = useAuthStore();
 
   async function handleSignOut() {
-    await removeToken();
-    logout();
+    try {
+      await GoogleSignin.signOut();
+      await removeToken();
+      logout();
+    } catch (error) {
+      console.error("Sign out failed:", error);
+      Alert.alert("Error", "Failed to sign out. Please try again.");
+    }
   }
 
   return (

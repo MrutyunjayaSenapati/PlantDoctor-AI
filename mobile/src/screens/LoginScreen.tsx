@@ -6,7 +6,6 @@ import { saveToken } from "../services/auth";
 import { apiClient } from "../api/client";
 
 const GOOGLE_WEB_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID ?? "";
-const GOOGLE_ANDROID_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID ?? "";
 
 export default function LoginScreen() {
   const { login } = useAuthStore();
@@ -14,7 +13,6 @@ export default function LoginScreen() {
   useEffect(() => {
     GoogleSignin.configure({
       webClientId: GOOGLE_WEB_CLIENT_ID,
-      androidClientId: GOOGLE_ANDROID_CLIENT_ID,
     });
   }, []);
 
