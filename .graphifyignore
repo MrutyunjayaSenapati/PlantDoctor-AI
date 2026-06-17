@@ -1,0 +1,15 @@
+node_modules/
+.pnpm/
+dist/
+.next/
+.git/
+*.generated.py
+.graphify-out/
+# images (not useful for the knowledge graph)
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.webp
+*.svg
+*.ico
