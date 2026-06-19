@@ -18,5 +18,23 @@ apiClient.interceptors.request.use((config) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+  console.log(`[API] ${config.method?.toUpperCase()} ${config.url}`);
   return config;
 });
+
+apiClient.interceptors.response.use(
+  (res) => {
+    console.log(`[API] ${res.status} ${res.config.url}`);
+    return res;
+  },
+  (error) => {
+    if (error.response) {
+      console.error(`[API] ${error.response.status} ${error.config?.url}`, error.response.data);
+    } else if (error.request) {
+      console.error(`[API] Network Error ${error.config?.url} — no response (check backend is running and reachable)`);
+    } else {
+      console.error(`[API]`, error.message);
+    }
+    return Promise.reject(error);
+  },
+);
