@@ -13,12 +13,10 @@ export const usersRelations = relations(users, ({ many }) => ({
 
 export const plantsRelations = relations(plants, ({ many }) => ({
   plantDiseases: many(plantDiseases),
-  diagnoses: many(diagnoses),
 }));
 
 export const diseasesRelations = relations(diseases, ({ many }) => ({
   plantDiseases: many(plantDiseases),
-  diagnoses: many(diagnoses),
 }));
 
 export const plantDiseasesRelations = relations(plantDiseases, ({ one }) => ({
@@ -36,14 +34,6 @@ export const diagnosesRelations = relations(diagnoses, ({ one, many }) => ({
   user: one(users, {
     fields: [diagnoses.userId],
     references: [users.id],
-  }),
-  plant: one(plants, {
-    fields: [diagnoses.plantId],
-    references: [plants.id],
-  }),
-  disease: one(diseases, {
-    fields: [diagnoses.diseaseId],
-    references: [diseases.id],
   }),
   feedback: many(feedback),
 }));

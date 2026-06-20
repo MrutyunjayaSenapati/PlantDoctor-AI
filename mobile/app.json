@@ -25,7 +25,14 @@
     },
     "plugins": [
       "expo-secure-store",
-      "@react-native-google-signin/google-signin"
+      "@react-native-google-signin/google-signin",
+      "expo-image-picker",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow PlantDoc AI to access your camera"
+        }
+      ]
     ]
   }
 }

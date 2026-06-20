@@ -8,6 +8,7 @@ export function authenticate(req: AuthRequest, res: Response, next: NextFunction
   const header = req.headers.authorization;
 
   if (!header?.startsWith("Bearer ")) {
+    console.log(`[Auth] 401 ${req.path} — no Bearer header`);
     res.status(401).json({ success: false, message: "Unauthorized" });
     return;
   }
@@ -17,8 +18,10 @@ export function authenticate(req: AuthRequest, res: Response, next: NextFunction
   try {
     const payload = jwt.verify(token, JWT_SECRET) as AuthPayload;
     req.user = payload;
+    console.log(`[Auth] 200 ${req.path} — ${payload.email}`);
     next();
   } catch {
+    console.log(`[Auth] 401 ${req.path} — invalid token`);
     res.status(401).json({ success: false, message: "Invalid token" });
   }
 }
