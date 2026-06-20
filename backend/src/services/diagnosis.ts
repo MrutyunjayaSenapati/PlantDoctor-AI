@@ -1,33 +1,12 @@
 import { db } from "../db";
 import { diagnoses } from "../db/schema/diagnoses";
 import { desc, eq, sql } from "drizzle-orm";
+import { analyzeWithAi, type AiDiagnosisResult } from "./aiService";
 
-export interface DiagnosisResult {
-  plant: string;
-  disease: string;
-  confidence: number;
-  status: string;
-  explanation: string;
-  treatment: string[];
-}
+export type DiagnosisResult = AiDiagnosisResult;
 
 export async function diagnose(imageUrl: string): Promise<DiagnosisResult> {
-  console.log(`Diagnosis requested for: ${imageUrl}`);
-
-  return {
-    plant: "Tomato",
-    disease: "Early Blight",
-    confidence: 0.94,
-    status: "HIGH_CONFIDENCE",
-    explanation: "Brown lesions detected on leaf surface. The pattern suggests a fungal infection consistent with Early Blight (Alternaria solani).",
-    treatment: [
-      "Remove infected leaves immediately to prevent spread",
-      "Apply fungicide containing chlorothalonil or copper",
-      "Improve air circulation around plants",
-      "Avoid overhead watering",
-      "Rotate crops next season",
-    ],
-  };
+  return analyzeWithAi(imageUrl);
 }
 
 export async function saveDiagnosis(userId: string, imageUrl: string, result: DiagnosisResult) {

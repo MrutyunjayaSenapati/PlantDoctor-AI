@@ -30,7 +30,7 @@ export async function handleDiagnose(req: AuthRequest, res: Response) {
       return;
     }
 
-    console.log(`[Diagnosis] Running mock analysis...`);
+    console.log(`[Diagnosis] Calling AI service...`);
     const result = await diagnose(parsed.data.imageUrl);
 
     console.log(`[Diagnosis] Saving to DB...`);
