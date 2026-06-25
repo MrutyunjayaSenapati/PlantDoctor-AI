@@ -1,5 +1,6 @@
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { Text, StyleSheet } from "react-native";
+import { useTheme } from "react-native-paper";
+import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import type { BottomTabParamList } from "./types";
 import HomeScreen from "../screens/HomeScreen";
 import HistoryScreen from "../screens/HistoryScreen";
@@ -7,32 +8,45 @@ import ProfileScreen from "../screens/ProfileScreen";
 
 const Tab = createBottomTabNavigator<BottomTabParamList>();
 
-function TabIcon({ label, focused }: { label: string; focused: boolean }) {
-  const icons: Record<string, string> = {
-    Home: "🏠",
-    History: "📋",
-    Profile: "👤",
-  };
+type TabName = keyof BottomTabParamList;
 
-  return (
-    <Text style={[styles.icon, focused && styles.iconFocused]}>
-      {icons[label] ?? "•"}
-    </Text>
-  );
-}
+const tabIcons: Record<TabName, { focused: keyof typeof MaterialCommunityIcons.glyphMap; unfocused: keyof typeof MaterialCommunityIcons.glyphMap }> = {
+  Home: { focused: "home", unfocused: "home-outline" },
+  History: { focused: "history", unfocused: "history" },
+  Profile: { focused: "account", unfocused: "account-outline" },
+};
 
 export default function BottomTabNavigator() {
+  const theme = useTheme();
+
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
-        tabBarIcon: ({ focused }) => (
-          <TabIcon label={route.name} focused={focused} />
-        ),
-        tabBarActiveTintColor: "#22C55E",
-        tabBarInactiveTintColor: "#999",
-        tabBarStyle: styles.tabBar,
-        tabBarLabelStyle: styles.tabLabel,
+        tabBarIcon: ({ focused, size }) => {
+          const icons = tabIcons[route.name as TabName];
+          return (
+            <MaterialCommunityIcons
+              name={focused ? icons.focused : icons.unfocused}
+              size={size}
+              color={focused ? theme.colors.primary : theme.colors.onSurfaceVariant}
+            />
+          );
+        },
+        tabBarActiveTintColor: theme.colors.primary,
+        tabBarInactiveTintColor: theme.colors.onSurfaceVariant,
+        tabBarStyle: {
+          backgroundColor: theme.colors.surface,
+          borderTopColor: theme.colors.outline,
+          borderTopWidth: 0.5,
+          paddingBottom: 4,
+          paddingTop: 4,
+          height: 60,
+        },
+        tabBarLabelStyle: {
+          fontSize: 12,
+          fontWeight: "600",
+        },
       })}
     >
       <Tab.Screen name="Home" component={HomeScreen} />
@@ -41,24 +55,3 @@ export default function BottomTabNavigator() {
     </Tab.Navigator>
   );
 }
-
-const styles = StyleSheet.create({
-  tabBar: {
-    backgroundColor: "#fff",
-    borderTopColor: "#E5E7EB",
-    borderTopWidth: 1,
-    paddingBottom: 4,
-    paddingTop: 4,
-    height: 60,
-  },
-  tabLabel: {
-    fontSize: 12,
-    fontWeight: "600",
-  },
-  icon: {
-    fontSize: 24,
-  },
-  iconFocused: {
-    fontSize: 28,
-  },
-});

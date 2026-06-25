@@ -1,28 +1,43 @@
-import { useEffect } from "react";
-import { View, Text, FlatList, StyleSheet, TouchableOpacity, ActivityIndicator, RefreshControl } from "react-native";
+import { useEffect, useState } from "react";
+import { View, StyleSheet, FlatList, RefreshControl } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { Text, Card, Searchbar, ActivityIndicator, useTheme, IconButton } from "react-native-paper";
+import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useHistoryStore } from "../store/historyStore";
-import EmptyState from "../components/EmptyState";
-import ErrorState from "../components/ErrorState";
-import LoadingState from "../components/LoadingState";
 import type { RootStackParamList } from "../navigation/types";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
 function formatDate(iso: string): string {
   const d = new Date(iso);
-  return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" });
+  return d.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
 export default function HistoryScreen() {
   const navigation = useNavigation<Nav>();
   const { items, total, page, totalPages, loading, refreshing, error, fetch, refresh } = useHistoryStore();
+  const theme = useTheme();
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     fetch(1);
   }, []);
+
+  const filteredItems = searchQuery
+    ? items.filter(
+        (item) =>
+          (item.plantName ?? "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+          (item.diseaseName ?? "").toLowerCase().includes(searchQuery.toLowerCase()),
+      )
+    : items;
 
   function handleItemPress(item: typeof items[0]) {
     navigation.navigate("Result", {
@@ -45,50 +60,130 @@ export default function HistoryScreen() {
 
   if (error && items.length === 0) {
     return (
-      <SafeAreaView style={styles.safe} edges={["top"]}>
+      <SafeAreaView style={[styles.safe, { backgroundColor: theme.colors.background }]} edges={["top"]}>
         <View style={styles.container}>
-          <Text style={styles.title}>History</Text>
-          <ErrorState message={error} onRetry={() => fetch(1)} />
+          <Text variant="headlineSmall" style={[styles.title, { color: theme.colors.onSurface }]}>
+            History
+          </Text>
+          <View style={styles.centerContainer}>
+            <MaterialCommunityIcons name="alert-circle-outline" size={48} color={theme.colors.error} />
+            <Text variant="bodyLarge" style={{ color: theme.colors.error, textAlign: "center", marginTop: 12, marginBottom: 16 }}>
+              {error}
+            </Text>
+          </View>
         </View>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={styles.safe} edges={["top"]}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: theme.colors.background }]} edges={["top"]}>
       <View style={styles.container}>
-        <Text style={styles.title}>History</Text>
+        <Text variant="headlineSmall" style={[styles.title, { color: theme.colors.onSurface }]}>
+          History
+        </Text>
+
+        <Searchbar
+          placeholder="Search diagnoses..."
+          onChangeText={setSearchQuery}
+          value={searchQuery}
+          style={[styles.searchBar, { backgroundColor: theme.colors.surfaceVariant }]}
+          iconColor={theme.colors.onSurfaceVariant}
+          inputStyle={{ color: theme.colors.onSurface }}
+          placeholderTextColor={theme.colors.onSurfaceVariant}
+        />
 
         {loading && items.length === 0 ? (
-          <LoadingState message="Loading history..." />
-        ) : items.length === 0 ? (
-          <EmptyState
-            icon="📋"
-            title="No diagnoses yet"
-            subtitle="Your plant diagnosis history will appear here after you run your first analysis."
-          />
+          <View style={styles.centerContainer}>
+            <ActivityIndicator size="large" color={theme.colors.primary} />
+          </View>
+        ) : filteredItems.length === 0 ? (
+          <View style={styles.centerContainer}>
+            <MaterialCommunityIcons
+              name={searchQuery ? "file-search-outline" : "clipboard-text-outline"}
+              size={64}
+              color={theme.colors.onSurfaceVariant}
+            />
+            <Text
+              variant="titleMedium"
+              style={{ color: theme.colors.onSurfaceVariant, textAlign: "center", marginTop: 16, fontWeight: "600" }}
+            >
+              {searchQuery ? "No matching diagnoses" : "No diagnoses yet"}
+            </Text>
+            <Text
+              variant="bodyMedium"
+              style={{ color: theme.colors.onSurfaceVariant, textAlign: "center", marginTop: 4 }}
+            >
+              {searchQuery
+                ? "Try a different search term"
+                : "Your plant diagnosis history will appear here after you run your first analysis."}
+            </Text>
+          </View>
         ) : (
           <>
-            <Text style={styles.count}>{total} diagnosis{total !== 1 ? "es" : ""}</Text>
+            <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginBottom: 12 }}>
+              {searchQuery ? `${filteredItems.length} of ${total} diagnosis${total !== 1 ? "es" : ""}` : `${total} diagnosis${total !== 1 ? "es" : ""}`}
+            </Text>
 
             <FlatList
-              data={items}
+              data={filteredItems}
               keyExtractor={(item) => item.id}
-              refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor="#22C55E" />}
+              refreshControl={
+                <RefreshControl
+                  refreshing={refreshing}
+                  onRefresh={refresh}
+                  tintColor={theme.colors.primary}
+                  colors={[theme.colors.primary]}
+                />
+              }
               onEndReached={handleLoadMore}
               onEndReachedThreshold={0.3}
-              ListFooterComponent={loading && page > 1 ? <ActivityIndicator style={styles.footer} color="#22C55E" /> : null}
+              ListFooterComponent={
+                loading && page > 1 ? (
+                  <ActivityIndicator style={styles.footer} color={theme.colors.primary} />
+                ) : null
+              }
               renderItem={({ item }) => (
-                <TouchableOpacity style={styles.card} onPress={() => handleItemPress(item)} activeOpacity={0.7}>
-                  <View style={styles.cardTop}>
-                    <Text style={styles.plantName}>{item.plantName ?? "Unknown plant"}</Text>
-                    <Text style={styles.confidence}>
-                      {item.confidence ? `${(Number(item.confidence) * 100).toFixed(0)}%` : "—"}
-                    </Text>
-                  </View>
-                  <Text style={styles.diseaseName}>{item.diseaseName ?? "Unknown disease"}</Text>
-                  <Text style={styles.date}>{formatDate(item.createdAt)}</Text>
-                </TouchableOpacity>
+                <Card
+                  style={[styles.card, { backgroundColor: theme.colors.surface }]}
+                  mode="elevated"
+                  onPress={() => handleItemPress(item)}
+                >
+                  <Card.Content>
+                    <View style={styles.cardTop}>
+                      <View style={styles.cardLeft}>
+                        <Text variant="titleMedium" style={{ color: theme.colors.onSurface, fontWeight: "600" }}>
+                          {item.plantName ?? "Unknown plant"}
+                        </Text>
+                        <Text
+                          variant="bodySmall"
+                          style={{ color: theme.colors.onSurfaceVariant, marginTop: 2 }}
+                        >
+                          {item.diseaseName ?? "Unknown disease"}
+                        </Text>
+                        <Text
+                          variant="labelSmall"
+                          style={{ color: theme.colors.onSurfaceVariant, marginTop: 4, opacity: 0.7 }}
+                        >
+                          {formatDate(item.createdAt)}
+                        </Text>
+                      </View>
+                      <View style={styles.cardRight}>
+                        <Text variant="titleMedium" style={{ color: theme.colors.primary, fontWeight: "700" }}>
+                          {item.confidence ? `${(Number(item.confidence) * 100).toFixed(0)}%` : "—"}
+                        </Text>
+                        {item.imageUrl && (
+                          <MaterialCommunityIcons
+                            name="chevron-right"
+                            size={20}
+                            color={theme.colors.onSurfaceVariant}
+                            style={{ marginTop: 4 }}
+                          />
+                        )}
+                      </View>
+                    </View>
+                  </Card.Content>
+                </Card>
               )}
             />
           </>
@@ -101,55 +196,40 @@ export default function HistoryScreen() {
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: "#fff",
   },
   container: {
     flex: 1,
     padding: 24,
   },
   title: {
-    fontSize: 28,
-    fontWeight: "bold",
-    color: "#111",
-    marginBottom: 4,
-  },
-  count: {
-    fontSize: 14,
-    color: "#999",
+    fontWeight: "700",
     marginBottom: 16,
   },
-  card: {
-    backgroundColor: "#F9FAFB",
+  searchBar: {
+    marginBottom: 16,
     borderRadius: 12,
-    padding: 16,
+  },
+  centerContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingBottom: 60,
+  },
+  card: {
     marginBottom: 12,
+    borderRadius: 12,
   },
   cardTop: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 4,
   },
-  plantName: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#111",
+  cardLeft: {
     flex: 1,
+    marginRight: 12,
   },
-  confidence: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: "#22C55E",
-    marginLeft: 12,
-  },
-  diseaseName: {
-    fontSize: 14,
-    color: "#666",
-    marginBottom: 4,
-  },
-  date: {
-    fontSize: 12,
-    color: "#999",
+  cardRight: {
+    alignItems: "flex-end",
   },
   footer: {
     paddingVertical: 20,

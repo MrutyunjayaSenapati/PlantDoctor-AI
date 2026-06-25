@@ -27,6 +27,15 @@ export async function saveDiagnosis(userId: string, imageUrl: string, result: Di
   return saved;
 }
 
+export async function getStats(userId: string) {
+  const [{ count }] = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(diagnoses)
+    .where(eq(diagnoses.userId, userId));
+
+  return { totalScans: Number(count) };
+}
+
 export async function getHistory(userId: string, page: number, limit: number) {
   const offset = (page - 1) * limit;
 

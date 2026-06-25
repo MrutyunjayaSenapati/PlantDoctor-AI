@@ -1,113 +1,134 @@
-import { View, Text, TouchableOpacity, StyleSheet, Alert } from "react-native";
+import { View, StyleSheet } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { Text, Button, Surface, useTheme } from "react-native-paper";
+import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { GoogleSignin, statusCodes } from "@react-native-google-signin/google-signin";
 import { useAuthStore } from "../store/authStore";
 import { saveToken } from "../services/auth";
 import { apiClient, setTokenGetter } from "../api/client";
+import { useSnackbar } from "../hooks/useSnackbar";
 
 export default function LoginScreen() {
   const { login } = useAuthStore();
+  const theme = useTheme();
+  const snackbar = useSnackbar();
 
   async function handleGoogleSignIn() {
     try {
-      console.log("[Login] Checking Play Services...");
       await GoogleSignin.hasPlayServices();
-      console.log("[Login] Play Services OK");
-
-      console.log("[Login] Starting Google sign-in...");
       await GoogleSignin.signIn();
-      console.log("[Login] Google sign-in completed");
-
-      console.log("[Login] Getting ID token...");
       const { idToken } = await GoogleSignin.getTokens();
       if (!idToken) {
-        console.error("[Login] No ID token returned from Google");
-        Alert.alert("Error", "Failed to get ID token from Google");
+        snackbar.show("Failed to get ID token from Google");
         return;
       }
-      console.log("[Login] ID token received");
-
-      console.log("[Login] Authenticating with backend...");
       const res = await apiClient.post("/auth/google", { idToken });
       const { accessToken, user } = res.data;
-      console.log("[Login] Backend auth success — user:", user.email);
-
-      console.log("[Login] Saving token...");
       await saveToken(accessToken);
-
-      console.log("[Login] Wiring token to API client...");
       setTokenGetter(() => accessToken);
-
-      console.log("[Login] Updating auth state...");
       login(user, accessToken);
-
-      console.log("[Login] ✅ Complete");
     } catch (error: any) {
-      if (error.code === statusCodes.SIGN_IN_CANCELLED) {
-        console.log("[Login] User cancelled sign-in");
-        return;
-      }
-      if (error.code === statusCodes.IN_PROGRESS) {
-        console.log("[Login] Sign-in already in progress");
-        return;
-      }
+      if (error.code === statusCodes.SIGN_IN_CANCELLED) return;
+      if (error.code === statusCodes.IN_PROGRESS) return;
       if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
-        console.error("[Login] Play Services not available");
-        Alert.alert("Error", "Google Play Services are not available");
+        snackbar.show("Google Play Services are not available");
         return;
       }
       if (error.response) {
-        console.error(`[Login] Backend error ${error.response.status}:`, error.response.data);
-        const msg = error.response.data?.message || error.message;
-        Alert.alert("Authentication Failed", msg);
+        snackbar.show(error.response.data?.message || error.message || "Authentication failed");
       } else if (error.request) {
-        console.error("[Login] Network error — backend unreachable at", apiClient.defaults.baseURL);
-        Alert.alert("Connection Error", "Cannot reach the server. Make sure the backend is running.");
+        snackbar.show("Cannot reach the server. Make sure the backend is running.");
       } else {
-        console.error("[Login] Unexpected error:", error);
-        Alert.alert("Error", "Google sign-in failed. Please try again.");
+        snackbar.show("Google sign-in failed. Please try again.");
       }
     }
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>PlantDoc AI</Text>
-      <Text style={styles.subtitle}>Identify plant diseases instantly with AI</Text>
-      <TouchableOpacity style={styles.googleButton} onPress={handleGoogleSignIn}>
-        <Text style={styles.googleButtonText}>Sign in with Google</Text>
-      </TouchableOpacity>
-    </View>
+    <SafeAreaView style={[styles.safe, { backgroundColor: theme.colors.background }]}>
+      <View style={styles.container}>
+        <Surface style={[styles.card, { backgroundColor: theme.colors.surface }]} elevation={2}>
+          <View style={styles.logoSection}>
+            <View style={[styles.logoCircle, { backgroundColor: theme.colors.primaryContainer }]}>
+              <MaterialCommunityIcons name="leaf" size={48} color={theme.colors.primary} />
+            </View>
+            <Text variant="displaySmall" style={[styles.title, { color: theme.colors.onSurface }]}>
+              PlantDoc AI
+            </Text>
+            <Text
+              variant="bodyLarge"
+              style={[styles.subtitle, { color: theme.colors.onSurfaceVariant }]}
+            >
+              Identify plant diseases instantly with AI
+            </Text>
+          </View>
+
+          <Button
+            mode="contained"
+            onPress={handleGoogleSignIn}
+            icon={() => (
+              <MaterialCommunityIcons name="google" size={20} color="#fff" />
+            )}
+            contentStyle={styles.googleButton}
+            style={[styles.googleButtonContainer, { backgroundColor: "#4285F4" }]}
+            labelStyle={styles.googleButtonText}
+          >
+            Sign in with Google
+          </Button>
+        </Surface>
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safe: {
+    flex: 1,
+  },
   container: {
     flex: 1,
-    backgroundColor: "#fff",
     alignItems: "center",
     justifyContent: "center",
     padding: 24,
   },
-  title: {
-    fontSize: 32,
-    fontWeight: "bold",
-    marginBottom: 8,
+  card: {
+    width: "100%",
+    maxWidth: 400,
+    borderRadius: 16,
+    padding: 32,
+    alignItems: "center",
   },
-  subtitle: {
-    fontSize: 16,
-    color: "#666",
-    marginBottom: 48,
+  logoSection: {
+    alignItems: "center",
+    marginBottom: 40,
+  },
+  logoCircle: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 20,
+  },
+  title: {
+    fontWeight: "700",
+    marginBottom: 8,
     textAlign: "center",
   },
+  subtitle: {
+    textAlign: "center",
+    lineHeight: 24,
+  },
   googleButton: {
-    backgroundColor: "#4285F4",
-    paddingHorizontal: 32,
-    paddingVertical: 14,
-    borderRadius: 8,
+    height: 48,
+  },
+  googleButtonContainer: {
+    borderRadius: 12,
+    width: "100%",
   },
   googleButtonText: {
-    color: "#fff",
     fontSize: 16,
     fontWeight: "600",
+    color: "#fff",
   },
 });
