@@ -26,3 +26,8 @@ export async function getHistory(page = 1, limit = 10): Promise<HistoryResponse>
   const res = await apiClient.get("/diagnosis/history", { params: { page, limit } });
   return res.data;
 }
+
+export async function getStats(): Promise<{ success: boolean; totalScans: number }> {
+  const res = await apiClient.get("/diagnosis/stats");
+  return res.data;
+}

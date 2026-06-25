@@ -1,7 +1,7 @@
 import { type Response } from "express";
 import { z } from "zod";
 import type { AuthRequest } from "../types/auth";
-import { diagnose, saveDiagnosis, getHistory } from "../services/diagnosis";
+import { diagnose, saveDiagnosis, getHistory, getStats } from "../services/diagnosis";
 
 const diagnoseSchema = z.object({
   imageUrl: z.string().url("Invalid image URL"),
@@ -41,6 +41,16 @@ export async function handleDiagnose(req: AuthRequest, res: Response) {
   } catch (error) {
     console.error(`[Diagnosis] Error ${user}:`, error);
     res.status(500).json({ success: false, message: "Diagnosis failed" });
+  }
+}
+
+export async function handleStats(req: AuthRequest, res: Response) {
+  try {
+    const { totalScans } = await getStats(req.user!.id);
+    res.json({ success: true, totalScans });
+  } catch (error) {
+    console.error(`[Stats] Error:`, error);
+    res.status(500).json({ success: false, message: "Failed to fetch stats" });
   }
 }
 
