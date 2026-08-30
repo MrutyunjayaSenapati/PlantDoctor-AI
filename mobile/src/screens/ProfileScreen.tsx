@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useCallback } from "react";
 import { View, StyleSheet, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
@@ -13,6 +13,7 @@ import {
 } from "react-native-paper";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { GoogleSignin } from "@react-native-google-signin/google-signin";
+import { useFocusEffect } from "@react-navigation/native";
 import { useAuthStore } from "../store/authStore";
 import { useHistoryStore } from "../store/historyStore";
 import { useThemeStore, type ThemeMode } from "../store/themeStore";
@@ -28,9 +29,11 @@ export default function ProfileScreen() {
   const theme = useTheme();
   const snackbar = useSnackbar();
 
-  useEffect(() => {
-    fetchStats();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      fetchStats();
+    }, [fetchStats])
+  );
 
   async function handleSignOut() {
     try {

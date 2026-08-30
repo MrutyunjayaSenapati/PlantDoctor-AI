@@ -1,9 +1,9 @@
-import { useEffect } from "react";
-import { View, StyleSheet, ScrollView } from "react-native";
+import { useCallback } from "react";
+import { View, StyleSheet, ScrollView, RefreshControl } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Text, Button, Card, useTheme, ActivityIndicator } from "react-native-paper";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import * as ImagePicker from "expo-image-picker";
 import { useAuthStore } from "../store/authStore";
@@ -23,14 +23,16 @@ function formatDate(iso: string): string {
 export default function HomeScreen() {
   const { user } = useAuthStore();
   const { setImage, setUploading, setUploaded, setError } = useUploadStore();
-  const { items, loading: historyLoading, fetch } = useHistoryStore();
+  const { items, loading: historyLoading, refreshing, fetch, refresh } = useHistoryStore();
   const navigation = useNavigation<HomeNav>();
   const theme = useTheme();
   const snackbar = useSnackbar();
 
-  useEffect(() => {
-    fetch(1);
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      fetch(1);
+    }, [fetch])
+  );
 
   const recentItems = items.slice(0, 3);
 
@@ -94,7 +96,18 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: theme.colors.background }]} edges={["top"]}>
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.scroll}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={refresh}
+            tintColor={theme.colors.primary}
+            colors={[theme.colors.primary]}
+          />
+        }
+      >
         <View style={styles.welcomeSection}>
           <View style={styles.welcomeRow}>
             <View style={styles.welcomeText}>
