@@ -1,0 +1,50 @@
+{
+  "cli": {
+    "version": ">= 12.0.0",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://plant-doctor-ai-backend.vercel.app/api/v1",
+        "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "871742373136-u15kngchhses9d5rp95dgd4ii0iff10s.apps.googleusercontent.com",
+        "EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID": "871742373136-tta4e360thb0o8sehijb4g5sd7si3bii.apps.googleusercontent.com",
+        "EXPO_PUBLIC_REDIRECT_URI": "https://auth.expo.io/@mrnobody007/plantdoc-ai"
+      }
+    },
+    "preview": {
+      "distribution": "internal",
+      "channel": "preview",
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://plant-doctor-ai-backend.vercel.app/api/v1",
+        "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "871742373136-u15kngchhses9d5rp95dgd4ii0iff10s.apps.googleusercontent.com",
+        "EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID": "871742373136-tta4e360thb0o8sehijb4g5sd7si3bii.apps.googleusercontent.com",
+        "EXPO_PUBLIC_REDIRECT_URI": "https://auth.expo.io/@mrnobody007/plantdoc-ai"
+      }
+    },
+    "production": {
+      "autoIncrement": true,
+      "channel": "production",
+      "android": {
+        "buildType": "app-bundle"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://plant-doctor-ai-backend.vercel.app/api/v1",
+        "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "871742373136-u15kngchhses9d5rp95dgd4ii0iff10s.apps.googleusercontent.com",
+        "EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID": "871742373136-tta4e360thb0o8sehijb4g5sd7si3bii.apps.googleusercontent.com",
+        "EXPO_PUBLIC_REDIRECT_URI": "https://auth.expo.io/@mrnobody007/plantdoc-ai"
+      }
+    }
+  },
+  "submit": {
+    "production": {}
+  }
+}

@@ -1,10 +1,10 @@
 name: Build Android APK (Free CI/CD)
 
 on:
-  workflow_dispatch: # Allows manual trigger from GitHub Actions tab with 1 click
+  workflow_dispatch:
     inputs:
       build_type:
-        description: 'Build Type (debug or release)'
+        description: 'Build Type (release or debug)'
         required: true
         default: 'release'
         type: choice
@@ -12,8 +12,13 @@ on:
           - release
           - debug
   push:
+    branches:
+      - main
+    paths:
+      - 'mobile/**'
+      - '.github/workflows/build-android.yml'
     tags:
-      - 'v*' # Automatically builds APK whenever you create a release tag like v1.0.0
+      - 'v*'
 
 jobs:
   build-apk:
@@ -42,18 +47,18 @@ jobs:
 
       - name: 📦 Install Mobile Dependencies
         working-directory: ./mobile
-        run: npm install
+        run: npm install --legacy-peer-deps
 
-      - name: ⚙️ Expo Prebuild & Gradle Cache
+      - name: ⚙️ Expo Prebuild
         working-directory: ./mobile
         env:
-          EXPO_PUBLIC_API_URL: ${{ secrets.EXPO_PUBLIC_API_URL || 'https://plantdoc-api.vercel.app/api/v1' }}
-          EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID: ${{ secrets.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID }}
-          EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID: ${{ secrets.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID }}
+          EXPO_PUBLIC_API_URL: ${{ secrets.EXPO_PUBLIC_API_URL || 'https://plant-doctor-ai-backend.vercel.app/api/v1' }}
+          EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID: ${{ secrets.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || '871742373136-u15kngchhses9d5rp95dgd4ii0iff10s.apps.googleusercontent.com' }}
+          EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID: ${{ secrets.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID || '871742373136-tta4e360thb0o8sehijb4g5sd7si3bii.apps.googleusercontent.com' }}
         run: |
           npx expo prebuild --platform android --no-install
 
-      - name: 🔨 Compile Standalone Release APK
+      - name: 🔨 Compile Standalone APK with Gradle
         working-directory: ./mobile/android
         run: |
           chmod +x gradlew
