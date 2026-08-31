@@ -4,7 +4,9 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field
 
 
-def compute_status(confidence: float) -> str:
+def compute_status(confidence: float, plant: str = "") -> str:
+    if plant.lower() in ("not a plant", "non-plant", "invalid", "unknown") or confidence <= 0.0:
+        return "INVALID_IMAGE"
     if confidence > 0.90:
         return "HIGH_CONFIDENCE"
     if confidence >= 0.70:

@@ -12,6 +12,7 @@ import { useHistoryStore } from "../store/historyStore";
 import { uploadImage } from "../services/upload";
 import type { RootStackParamList } from "../navigation/types";
 import { useSnackbar } from "../hooks/useSnackbar";
+import { validateImage } from "../services/imageSanitizer";
 
 type HomeNav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -36,33 +37,8 @@ export default function HomeScreen() {
 
   const recentItems = items.slice(0, 3);
 
-  async function handleTakePhoto() {
-    const permission = await ImagePicker.requestCameraPermissionsAsync();
-    if (!permission.granted) {
-      snackbar.show("Camera access is needed to take photos.");
-      return;
-    }
-
-    const result = await ImagePicker.launchCameraAsync({
-      mediaTypes: ["images"],
-      quality: 0.8,
-    });
-
-    if (result.canceled || !result.assets[0]) return;
-
-    const uri = result.assets[0].uri;
-    setImage(uri);
-    setUploading(true);
-
-    try {
-      const imageUrl = await uploadImage(uri);
-      setUploaded(imageUrl);
-      navigation.navigate("Analysis", { imageUrl });
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Upload failed";
-      setError(message);
-      snackbar.show(message);
-    }
+  function handleTakePhoto() {
+    navigation.navigate("Camera");
   }
 
   async function handleUploadGallery() {
@@ -80,6 +56,14 @@ export default function HomeScreen() {
     if (result.canceled || !result.assets[0]) return;
 
     const uri = result.assets[0].uri;
+
+    // Frontend Sanitization Pre-check
+    const validation = await validateImage(uri);
+    if (!validation.isValid) {
+      snackbar.show(validation.reason || "⚠️ Please select a clear photo of a plant leaf.");
+      return;
+    }
+
     setImage(uri);
     setUploading(true);
 

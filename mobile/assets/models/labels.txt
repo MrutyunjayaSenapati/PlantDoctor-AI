@@ -1,0 +1,4 @@
+0 Background/Non-Plant
+1 Healthy Plant Leaf
+2 Diseased Plant Leaf
+3 Plant Stem/Flower

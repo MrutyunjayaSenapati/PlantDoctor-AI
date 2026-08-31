@@ -10,16 +10,25 @@ from app.services.ai.base import DiagnosisProvider
 
 logger = logging.getLogger(__name__)
 
-PROMPT = """Perform an expert botanical and phytopathological analysis of this plant image.
-
+PROMPT = """Perform an expert botanical and phytopathological analysis of this image.
+ 
 Instructions:
-1. Examine leaf morphology carefully (leaflet arrangement, margin serration, trichomes, venation) to accurately identify the exact plant species (e.g., Potato vs Tomato vs Pepper).
-2. Inspect visual disease symptoms, lesions, fungal spots, or discoloration.
-3. Return ONLY valid JSON with no markdown wrapping or extra text.
+1. Plant Validation Gate: First check if the image clearly contains a plant, leaf, crop, flower, or agricultural vegetation.
+   - If the image is NOT a plant (e.g. human face, pet, car, electronic device, furniture, clothing, shoe, screenshot, or solid background), you MUST return:
+     {
+       "plant": "Not a Plant",
+       "disease": "No Plant Detected",
+       "confidence": 0.0,
+       "explanation": "The uploaded image does not appear to contain a plant, leaf, or crop. Please provide a clear, well-lit photo of a plant leaf.",
+       "treatment": []
+     }
+2. Leaf & Species Identification: Examine leaf morphology carefully (leaflet arrangement, margin serration, trichomes, venation) to accurately identify the exact plant species (e.g., Potato, Tomato, Pepper, Corn, Rose).
+3. Pathology & Symptoms: Inspect visual disease symptoms, lesions, fungal spots, chlorosis, or discoloration.
+4. Return ONLY valid JSON with no markdown wrapping or extra text.
 
 {
-  "plant": "exact common name of the plant (e.g., Potato, Tomato, Corn, Rose)",
-  "disease": "name of the disease or 'Healthy' if none",
+  "plant": "exact common name of the plant (e.g., Potato, Tomato, Corn, Rose) or 'Not a Plant'",
+  "disease": "name of the disease, 'Healthy' if none, or 'No Plant Detected'",
   "confidence": 0.0 to 1.0,
   "explanation": "clinical visual evidence supporting plant identification and disease diagnosis",
   "treatment": ["step 1", "step 2", "step 3"]
@@ -42,7 +51,6 @@ class GeminiProvider(DiagnosisProvider):
             contents=[PROMPT, image_part],
         )
 
-
         raw = response.text.strip()
         logger.info("Gemini response received (%d chars)", len(raw))
 
@@ -50,11 +58,12 @@ class GeminiProvider(DiagnosisProvider):
 
         data = json.loads(raw)
 
+        plant = str(data.get("plant", ""))
         confidence = float(data.get("confidence", 0.0))
-        status = compute_status(confidence)
+        status = compute_status(confidence, plant=plant)
 
         return DiagnosisResponse(
-            plant=str(data.get("plant", "")),
+            plant=plant,
             disease=str(data.get("disease", "")),
             confidence=confidence,
             status=status,
