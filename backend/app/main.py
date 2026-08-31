@@ -13,6 +13,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger("plantdoc")
 
+# Raw FastAPI App
 app = FastAPI(
     title="PlantDoc AI API",
     version="1.0.0",
@@ -30,6 +31,31 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+# ASGI Middleware to handle Vercel Serverless Path Rewrites
+class VercelPathMiddleware:
+    """
+    Normalizes ASGI request paths when running inside Vercel Serverless Functions.
+    Strips internal function paths like /api/index.py, /api/index, /api/main.py to restore root /docs and /health.
+    """
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] == "http":
+            path = scope.get("path", "")
+            for prefix in ["/api/index.py", "/api/index", "/api/main.py", "/api/main"]:
+                if path.startswith(prefix):
+                    path = path[len(prefix):]
+                    if not path.startswith("/"):
+                        path = "/" + path
+                    scope["path"] = path
+                    break
+        await self.app(scope, receive, send)
+
+
+app.add_middleware(VercelPathMiddleware)
 
 
 @app.exception_handler(RequestValidationError)
