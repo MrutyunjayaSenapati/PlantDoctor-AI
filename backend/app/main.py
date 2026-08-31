@@ -5,6 +5,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.api.router import api_router, v1_router
+from app.api.auth import router as auth_router
+from app.api.diagnosis import router as diagnosis_router
+from app.api.feedback import router as feedback_router
+from app.api.upload import router as upload_router
 from app.config import settings
 
 logging.basicConfig(
@@ -91,5 +95,14 @@ async def health_check():
     return {"status": "ok"}
 
 
+# Mount API routers with /api/v1 prefix (Standard)
 app.include_router(api_router)
+
+# Mount API routers with /v1 prefix (Vercel Serverless variant)
 app.include_router(v1_router)
+
+# Mount direct routers for seamless serverless routing regardless of proxy rewrite
+app.include_router(auth_router, prefix="/auth", tags=["auth"])
+app.include_router(upload_router, prefix="/upload", tags=["upload"])
+app.include_router(diagnosis_router, prefix="/diagnosis", tags=["diagnosis"])
+app.include_router(feedback_router, prefix="/feedback", tags=["feedback"])
