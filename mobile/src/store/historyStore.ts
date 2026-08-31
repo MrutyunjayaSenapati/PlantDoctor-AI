@@ -38,11 +38,12 @@ export const useHistoryStore = create<HistoryState>((set, get) => ({
 
     try {
       const data = await getHistory(p);
+      const newItems = Array.isArray(data?.items) ? data.items : [];
       set({
-        items: p === 1 ? data.items : [...get().items, ...data.items],
-        total: data.total,
-        page: data.page,
-        totalPages: data.totalPages,
+        items: p === 1 ? newItems : [...(get().items || []), ...newItems],
+        total: data?.total ?? 0,
+        page: data?.page ?? 1,
+        totalPages: data?.totalPages ?? 1,
         loading: false,
       });
     } catch (err) {
@@ -55,8 +56,8 @@ export const useHistoryStore = create<HistoryState>((set, get) => ({
     try {
       const data = await getHistory(1);
       set({
-        items: data.items,
-        total: data.total,
+        items: Array.isArray(data?.items) ? data.items : [],
+        total: data?.total ?? 0,
         page: 1,
         totalPages: data.totalPages,
         refreshing: false,

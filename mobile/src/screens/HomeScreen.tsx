@@ -35,7 +35,7 @@ export default function HomeScreen() {
     }, [fetch])
   );
 
-  const recentItems = items.slice(0, 3);
+  const recentItems = (items || []).slice(0, 3);
 
   function handleTakePhoto() {
     navigation.navigate("Camera");
