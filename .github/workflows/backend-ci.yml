@@ -34,7 +34,8 @@ jobs:
       - name: 🚀 Run Pytest
         working-directory: ./backend
         env:
+          PYTHONPATH: .
           DATABASE_URL: "sqlite+aiosqlite:///:memory:"
           JWT_SECRET: "ci-test-secret-key-12345"
           ENVIRONMENT: "testing"
-        run: pytest -v
+        run: python -m pytest -v
