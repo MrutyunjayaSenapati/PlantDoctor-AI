@@ -33,25 +33,30 @@ app.add_middleware(
 )
 
 
-# ASGI Middleware to handle Vercel Serverless Path Rewrites
+# ASGI Middleware to accurately map Vercel serverless paths
 class VercelPathMiddleware:
     """
-    Normalizes ASGI request paths when running inside Vercel Serverless Functions.
-    Strips internal function paths like /api/index.py, /api/index, /api/main.py to restore root /docs and /health.
+    Extracts the true client request path from Vercel's x-matched-path / x-forwarded-uri headers
+    so Swagger UI (/docs, /openapi.json) and all API routes resolve perfectly on Vercel Serverless.
     """
     def __init__(self, app):
         self.app = app
 
     async def __call__(self, scope, receive, send):
         if scope["type"] == "http":
-            path = scope.get("path", "")
-            for prefix in ["/api/index.py", "/api/index", "/api/main.py", "/api/main"]:
-                if path.startswith(prefix):
-                    path = path[len(prefix):]
-                    if not path.startswith("/"):
-                        path = "/" + path
-                    scope["path"] = path
-                    break
+            headers = dict(scope.get("headers", []))
+            # 1. Check for x-matched-path (injected by Vercel rewrites)
+            matched_path = headers.get(b"x-matched-path", b"").decode("utf-8")
+            if matched_path:
+                scope["path"] = matched_path
+            else:
+                # 2. Fallback to cleaning serverless file paths
+                path = scope.get("path", "")
+                for prefix in ["/api/index.py", "/api/index", "/api/main.py", "/api/main"]:
+                    if path.startswith(prefix):
+                        path = path[len(prefix):] or "/"
+                        scope["path"] = path
+                        break
         await self.app(scope, receive, send)
 
 
@@ -104,7 +109,7 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
 async def root():
     return {
         "success": True,
-        "message": "🌱 PlantDoc AI Backend is Live!",
+        "message": "PlantDoc AI Backend is Live!",
         "version": "1.0.0",
         "docs": "/docs",
         "health": "/health",
