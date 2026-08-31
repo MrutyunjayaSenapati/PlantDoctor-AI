@@ -92,7 +92,16 @@ async def root():
 
 @app.get("/health")
 async def health_check():
-    return {"status": "ok"}
+    db_status = "unknown"
+    try:
+        from app.db.session import engine
+        from sqlalchemy import text
+        async with engine.connect() as conn:
+            await conn.execute(text("SELECT 1"))
+        db_status = "connected"
+    except Exception as e:
+        db_status = f"failed: {str(e)}"
+    return {"status": "ok", "database": db_status}
 
 
 # Mount API routers with /api/v1 prefix (Standard)
