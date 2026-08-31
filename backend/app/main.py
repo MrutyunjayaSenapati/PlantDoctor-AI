@@ -75,6 +75,7 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
         content={
             "success": False,
             "message": "Internal server error",
+            "error_detail": f"{type(exc).__name__}: {str(exc)}",
         },
     )
 
