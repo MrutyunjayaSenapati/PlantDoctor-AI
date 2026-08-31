@@ -17,6 +17,9 @@ app = FastAPI(
     title="PlantDoc AI API",
     version="1.0.0",
     description="Unified FastAPI Backend for PlantDoc AI",
+    docs_url="/docs",
+    redoc_url="/redoc",
+    openapi_url="/openapi.json",
 )
 
 # CORS configuration
@@ -71,10 +74,20 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
     )
 
 
+@app.get("/")
+async def root():
+    return {
+        "success": True,
+        "message": "🌱 PlantDoc AI Backend is Live!",
+        "version": "1.0.0",
+        "docs": "/docs",
+        "health": "/health",
+    }
+
+
 @app.get("/health")
 async def health_check():
-    return {"status": "ok"}
-
+    return {"status": "ok", "service": "plantdoc-backend"}
 
 
 app.include_router(api_router)
