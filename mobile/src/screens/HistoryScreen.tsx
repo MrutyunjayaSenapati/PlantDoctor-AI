@@ -1,9 +1,9 @@
-import { useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { View, StyleSheet, FlatList, RefreshControl } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Text, Card, Searchbar, ActivityIndicator, useTheme, IconButton } from "react-native-paper";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useHistoryStore } from "../store/historyStore";
 import type { RootStackParamList } from "../navigation/types";
@@ -27,9 +27,11 @@ export default function HistoryScreen() {
   const theme = useTheme();
   const [searchQuery, setSearchQuery] = useState("");
 
-  useEffect(() => {
-    fetch(1);
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      fetch(1);
+    }, [fetch])
+  );
 
   const filteredItems = searchQuery
     ? items.filter(

@@ -89,7 +89,66 @@ export default function ResultScreen() {
     navigation.popToTop();
   }
 
+  const isInvalid =
+    status === "INVALID_IMAGE" ||
+    plant.toLowerCase().includes("not a plant") ||
+    disease.toLowerCase().includes("no plant detected");
+
   const statusVariantValue = statusVariant(status);
+
+  if (isInvalid) {
+    return (
+      <SafeAreaView style={[styles.safe, { backgroundColor: theme.colors.background }]} edges={["top", "bottom"]}>
+        <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+          <Text variant="headlineSmall" style={[styles.heading, { color: theme.colors.onSurface }]}>
+            Scan Result
+          </Text>
+
+          {imageUrl && (
+            <Card mode="elevated" style={[styles.imageCard, { backgroundColor: theme.colors.surface }]}>
+              <Card.Cover source={{ uri: imageUrl }} style={styles.image} />
+            </Card>
+          )}
+
+          <Surface style={[styles.card, { backgroundColor: theme.colors.surface, borderColor: theme.colors.error, borderWidth: 1 }]} elevation={1}>
+            <View style={styles.cardRow}>
+              <View style={[styles.cardIcon, { backgroundColor: "rgba(239, 68, 68, 0.12)" }]}>
+                <MaterialCommunityIcons name="alert-circle-outline" size={28} color={theme.colors.error} />
+              </View>
+              <View style={styles.cardContent}>
+                <Text variant="titleMedium" style={{ color: theme.colors.error, fontWeight: "700" }}>
+                  No Plant Leaf Detected
+                </Text>
+                <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant, marginTop: 4, lineHeight: 20 }}>
+                  {explanation || "The uploaded image does not appear to contain a plant or crop leaf. Please frame a clear, well-lit plant leaf inside the scanner reticle."}
+                </Text>
+              </View>
+            </View>
+          </Surface>
+
+          <View style={{ marginTop: 24, gap: 12 }}>
+            <Button
+              mode="contained"
+              onPress={() => navigation.navigate("Camera")}
+              icon={() => <MaterialCommunityIcons name="camera-retake" size={20} color="#fff" />}
+              contentStyle={styles.homeButtonContent}
+              style={styles.homeButton}
+            >
+              Retake Photo
+            </Button>
+            <Button
+              mode="outlined"
+              onPress={handleGoHome}
+              contentStyle={styles.homeButtonContent}
+              style={styles.homeButton}
+            >
+              Back to Home
+            </Button>
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: theme.colors.background }]} edges={["top", "bottom"]}>

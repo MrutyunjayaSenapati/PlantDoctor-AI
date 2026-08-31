@@ -1,0 +1,89 @@
+name: Build Android APK (Free CI/CD)
+
+on:
+  workflow_dispatch: # Allows manual trigger from GitHub Actions tab with 1 click
+    inputs:
+      build_type:
+        description: 'Build Type (debug or release)'
+        required: true
+        default: 'release'
+        type: choice
+        options:
+          - release
+          - debug
+  push:
+    tags:
+      - 'v*' # Automatically builds APK whenever you create a release tag like v1.0.0
+
+jobs:
+  build-apk:
+    name: 🤖 Compile Android Standalone APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: ☕ Setup Java JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: 📱 Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: 🟢 Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: 📦 Install Mobile Dependencies
+        working-directory: ./mobile
+        run: npm install
+
+      - name: ⚙️ Expo Prebuild & Gradle Cache
+        working-directory: ./mobile
+        env:
+          EXPO_PUBLIC_API_URL: ${{ secrets.EXPO_PUBLIC_API_URL || 'https://plantdoc-api.vercel.app/api/v1' }}
+          EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID: ${{ secrets.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID }}
+          EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID: ${{ secrets.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID }}
+        run: |
+          npx expo prebuild --platform android --no-install
+
+      - name: 🔨 Compile Standalone Release APK
+        working-directory: ./mobile/android
+        run: |
+          chmod +x gradlew
+          if [ "${{ github.event.inputs.build_type }}" = "debug" ]; then
+            ./gradlew assembleDebug --no-daemon
+          else
+            ./gradlew assembleRelease --no-daemon
+          fi
+
+      - name: 📦 Locate APK Output
+        id: find_apk
+        run: |
+          APK_PATH=$(find mobile/android/app/build/outputs/apk -name "*.apk" | head -n 1)
+          echo "Found APK at: $APK_PATH"
+          echo "apk_path=$APK_PATH" >> $GITHUB_OUTPUT
+
+      - name: 🚀 Upload APK Artifact (Downloadable from GitHub Actions)
+        uses: actions/upload-artifact@v4
+        with:
+          name: PlantDoc-AI-Android-APK
+          path: ${{ steps.find_apk.outputs.apk_path }}
+          retention-days: 30
+
+      - name: 🏷️ Publish GitHub Release (if triggered by git tag)
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ steps.find_apk.outputs.apk_path }}
+          name: Release ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

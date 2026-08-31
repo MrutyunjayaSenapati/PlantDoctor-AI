@@ -1,9 +1,9 @@
-import { useEffect } from "react";
-import { View, StyleSheet, ScrollView } from "react-native";
+import { useCallback } from "react";
+import { View, StyleSheet, ScrollView, RefreshControl } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Text, Button, Card, useTheme, ActivityIndicator } from "react-native-paper";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import * as ImagePicker from "expo-image-picker";
 import { useAuthStore } from "../store/authStore";
@@ -12,6 +12,7 @@ import { useHistoryStore } from "../store/historyStore";
 import { uploadImage } from "../services/upload";
 import type { RootStackParamList } from "../navigation/types";
 import { useSnackbar } from "../hooks/useSnackbar";
+import { validateImage } from "../services/imageSanitizer";
 
 type HomeNav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -23,44 +24,21 @@ function formatDate(iso: string): string {
 export default function HomeScreen() {
   const { user } = useAuthStore();
   const { setImage, setUploading, setUploaded, setError } = useUploadStore();
-  const { items, loading: historyLoading, fetch } = useHistoryStore();
+  const { items, loading: historyLoading, refreshing, fetch, refresh } = useHistoryStore();
   const navigation = useNavigation<HomeNav>();
   const theme = useTheme();
   const snackbar = useSnackbar();
 
-  useEffect(() => {
-    fetch(1);
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      fetch(1);
+    }, [fetch])
+  );
 
   const recentItems = items.slice(0, 3);
 
-  async function handleTakePhoto() {
-    const permission = await ImagePicker.requestCameraPermissionsAsync();
-    if (!permission.granted) {
-      snackbar.show("Camera access is needed to take photos.");
-      return;
-    }
-
-    const result = await ImagePicker.launchCameraAsync({
-      mediaTypes: ["images"],
-      quality: 0.8,
-    });
-
-    if (result.canceled || !result.assets[0]) return;
-
-    const uri = result.assets[0].uri;
-    setImage(uri);
-    setUploading(true);
-
-    try {
-      const imageUrl = await uploadImage(uri);
-      setUploaded(imageUrl);
-      navigation.navigate("Analysis", { imageUrl });
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Upload failed";
-      setError(message);
-      snackbar.show(message);
-    }
+  function handleTakePhoto() {
+    navigation.navigate("Camera");
   }
 
   async function handleUploadGallery() {
@@ -78,6 +56,14 @@ export default function HomeScreen() {
     if (result.canceled || !result.assets[0]) return;
 
     const uri = result.assets[0].uri;
+
+    // Frontend Sanitization Pre-check
+    const validation = await validateImage(uri);
+    if (!validation.isValid) {
+      snackbar.show(validation.reason || "⚠️ Please select a clear photo of a plant leaf.");
+      return;
+    }
+
     setImage(uri);
     setUploading(true);
 
@@ -94,7 +80,18 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: theme.colors.background }]} edges={["top"]}>
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.scroll}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={refresh}
+            tintColor={theme.colors.primary}
+            colors={[theme.colors.primary]}
+          />
+        }
+      >
         <View style={styles.welcomeSection}>
           <View style={styles.welcomeRow}>
             <View style={styles.welcomeText}>
