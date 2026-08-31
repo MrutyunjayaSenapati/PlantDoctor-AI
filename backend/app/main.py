@@ -4,7 +4,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from app.api.router import api_router
+from app.api.router import api_router, v1_router
 from app.config import settings
 
 logging.basicConfig(
@@ -88,7 +88,8 @@ async def root():
 
 @app.get("/health")
 async def health_check():
-    return {"status": "ok", "service": "plantdoc-backend"}
+    return {"status": "ok"}
 
 
 app.include_router(api_router)
+app.include_router(v1_router)
