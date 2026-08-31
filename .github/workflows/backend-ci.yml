@@ -36,6 +36,6 @@ jobs:
         env:
           PYTHONPATH: .
           DATABASE_URL: "sqlite+aiosqlite:///:memory:"
-          JWT_SECRET: "ci-test-secret-key-12345"
+          JWT_SECRET: "ci-test-secret-key-at-least-32-chars-long"
           ENVIRONMENT: "testing"
         run: python -m pytest -v
