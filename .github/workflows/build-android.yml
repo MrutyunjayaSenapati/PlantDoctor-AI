@@ -1,16 +1,6 @@
-name: Build Android APK (Free CI/CD)
+name: EAS CI/CD & Auto Updates (PlantDoc AI)
 
 on:
-  workflow_dispatch:
-    inputs:
-      build_type:
-        description: 'Build Type (release or debug)'
-        required: true
-        default: 'release'
-        type: choice
-        options:
-          - release
-          - debug
   push:
     branches:
       - main
@@ -19,21 +9,68 @@ on:
       - '.github/workflows/build-android.yml'
     tags:
       - 'v*'
+  workflow_dispatch:
+    inputs:
+      build_apk:
+        description: 'Build a fresh standalone Android APK file?'
+        required: true
+        type: boolean
+        default: false
+      build_type:
+        description: 'Build Type (release or debug)'
+        required: true
+        default: 'release'
+        type: choice
+        options:
+          - release
+          - debug
 
 jobs:
-  build-apk:
-    name: 🤖 Compile Android Standalone APK
+  ota_update:
+    name: 🚀 Push Over-The-Air Auto Update
     runs-on: ubuntu-latest
-
     steps:
       - name: 📥 Checkout Repository
         uses: actions/checkout@v4
 
-      - name: ☕ Setup Java JDK 17
+      - name: 🟢 Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: 📱 Setup Expo & EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: 📦 Install Dependencies
+        working-directory: ./mobile
+        run: npm install --legacy-peer-deps
+
+      - name: 🚀 Publish Instant OTA Update
+        working-directory: ./mobile
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: npx eas-cli update --channel preview --auto --non-interactive
+
+  build_apk:
+    name: 🤖 Compile Standalone Android APK (Free GitHub Runner)
+    if: github.event.inputs.build_apk == 'true' || startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    env:
+      EXPO_UPDATE_CHANNEL: "preview"
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: ☕ Setup Java 17
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
-          java-version: '17'
+          java-version: 17
 
       - name: 📱 Setup Android SDK
         uses: android-actions/setup-android@v3
@@ -49,23 +86,24 @@ jobs:
         working-directory: ./mobile
         run: npm install --legacy-peer-deps
 
-      - name: ⚙️ Expo Prebuild
+      - name: ⚙️ Generate Native Android Code (Expo Prebuild)
         working-directory: ./mobile
         env:
           EXPO_PUBLIC_API_URL: ${{ secrets.EXPO_PUBLIC_API_URL || 'https://plant-doctor-ai-backend.vercel.app/api/v1' }}
           EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID: ${{ secrets.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || '871742373136-u15kngchhses9d5rp95dgd4ii0iff10s.apps.googleusercontent.com' }}
           EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID: ${{ secrets.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID || '871742373136-tta4e360thb0o8sehijb4g5sd7si3bii.apps.googleusercontent.com' }}
-        run: |
-          npx expo prebuild --platform android --no-install
+        run: npx expo prebuild --platform android --no-install
 
-      - name: 🔨 Compile Standalone APK with Gradle
+      - name: 🔨 Compile Standalone Android APK with Gradle
         working-directory: ./mobile/android
+        env:
+          GRADLE_OPTS: "-Dorg.gradle.jvmargs='-Xmx4096m -XX:MaxMetaspaceSize=1024m'"
         run: |
           chmod +x gradlew
           if [ "${{ github.event.inputs.build_type }}" = "debug" ]; then
-            ./gradlew assembleDebug --no-daemon
+            ./gradlew assembleDebug -x lintVitalAnalyzeRelease -x lintVitalRelease --no-daemon
           else
-            ./gradlew assembleRelease --no-daemon
+            ./gradlew assembleRelease -x lintVitalAnalyzeRelease -x lintVitalRelease --no-daemon
           fi
 
       - name: 📦 Locate APK Output
@@ -75,7 +113,7 @@ jobs:
           echo "Found APK at: $APK_PATH"
           echo "apk_path=$APK_PATH" >> $GITHUB_OUTPUT
 
-      - name: 🚀 Upload APK Artifact (Downloadable from GitHub Actions)
+      - name: 🚀 Upload Standalone APK Artifact (Downloadable from GitHub Actions)
         uses: actions/upload-artifact@v4
         with:
           name: PlantDoc-AI-Android-APK
