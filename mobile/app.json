@@ -2,11 +2,24 @@
   "expo": {
     "name": "PlantDoc AI",
     "slug": "plantdoc-ai",
+    "owner": "mrnobody007",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
     "scheme": "plantdoc-ai",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/6e136a50-3c26-418e-b3e7-01b0bfeaca89",
+      "enabled": true,
+      "checkAutomatically": "ON_LOAD",
+      "fallbackToCacheTimeout": 3000,
+      "requestHeaders": {
+        "expo-channel-name": "preview"
+      }
+    },
     "ios": {
       "supportsTablet": true
     },
@@ -18,12 +31,16 @@
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.plantdocai.app"
+      "package": "com.plantdocai.app",
+      "permissions": [
+        "android.permission.CAMERA"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
+      "expo-updates",
       "expo-secure-store",
       "@react-native-google-signin/google-signin",
       "expo-image-picker",
@@ -34,6 +51,11 @@
           "cameraPermission": "Allow PlantDoc AI to access your camera"
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "6e136a50-3c26-418e-b3e7-01b0bfeaca89"
+      }
+    }
   }
 }
